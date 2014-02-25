@@ -8,6 +8,7 @@ import java.sql.SQLException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 
 import com.mojang.api.profiles.HttpProfileRepository;
 import com.mojang.api.profiles.Profile;
@@ -108,10 +109,12 @@ public class ConvertUUIDs {
             System.out.println("Found " + uuids.size() + " names to do");
             stmt.close();
             double uuidsCompleted = 0;
+            int failedNames = 0;
             stmt = getConnection().prepareStatement(
                     "UPDATE " + mysql_Table + " SET " + mysql_UUID_Column + "=? WHERE `" + mysql_Player_Column + "` = ?");
-
-            for (String name : uuids) {
+            Iterator<String> itel = uuids.iterator();
+            while (itel.hasNext()) {
+                String name = itel.next();
                 String uuid = getUUID(name);
                 if (uuid == null) {
                     System.out.println("Cannot fetch UUID for player " + name + ". Skipping him!");
@@ -119,6 +122,8 @@ public class ConvertUUIDs {
                         perSecond.remove(perSecond.size() - 1);
                         perSecond.add(System.currentTimeMillis());
                     }
+                    failedNames++;
+                    itel.remove();
                     continue;
                 }
                 stmt.setString(1, uuid);
@@ -129,6 +134,7 @@ public class ConvertUUIDs {
                         + name);
             }
             System.out.println("Finished converting the UUIDs! Completed " + (int) uuidsCompleted + " names!");
+            System.out.println(failedNames + " names were unable to be converted because the UUID's were not found");
             con.close();
         } catch (Exception ex) {
             ex.printStackTrace();
