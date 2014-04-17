@@ -133,7 +133,7 @@ public class ConvertUUIDs {
 		System.out.println("Database table: ");
 		mysql_Table = scan.nextLine();
 
-		System.out.println("Name column: (i.e. names) ");
+		System.out.println("Name column (i.e. names): ");
 		mysql_Player_Column = scan.nextLine();
 
 		System.out.println("UUID column (i.e. uuids): ");
