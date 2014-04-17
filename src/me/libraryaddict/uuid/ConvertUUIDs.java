@@ -9,6 +9,7 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Scanner;
 
 import com.mojang.api.profiles.HttpProfileRepository;
 import com.mojang.api.profiles.Profile;
@@ -16,13 +17,13 @@ import com.mojang.api.profiles.Profile;
 public class ConvertUUIDs {
 
 	private static Connection con;
-	private static String mysql_Database = "Database";
-	private static String mysql_IP = "url.or.ip.to.mydatabase.com";
-	private static String mysql_Password = "password";
-	private static String mysql_Player_Column = "Name";
-	private static String mysql_Table = "TableName";
-	private static String mysql_User = "root";
-	private static String mysql_UUID_Column = "UUID";
+
+	public static Boolean withDashes;
+
+	private static String temp, mysql_Database, mysql_IP, mysql_Password,
+			mysql_Player_Column, mysql_Table, mysql_User, mysql_UUID_Column;
+
+	private static ArrayList<Long> perSecond = new ArrayList<Long>();
 
 	private static final HttpProfileRepository profileRepository = new HttpProfileRepository(
 			"minecraft");
@@ -66,6 +67,22 @@ public class ConvertUUIDs {
 		}
 	}
 
+	public static String uuidWithDashes(String s) {
+		String fin = "";
+		int count = 0;
+
+		for (char ch : s.toCharArray()) {
+			count++;
+
+			if (count != 8 && count != 12 && count != 16 && count != 20) {
+				fin += ch;
+			} else {
+				fin += ch + "-";
+			}
+		}
+		return fin;
+	}
+
 	private static String getSeconds() {
 		if (!perSecond.isEmpty()) {
 			perSecond.set(perSecond.size() - 1, System.currentTimeMillis()
@@ -86,9 +103,44 @@ public class ConvertUUIDs {
 		return nf.format(total);
 	}
 
-	private static ArrayList<Long> perSecond = new ArrayList<Long>();
-
 	public static void main(String[] args) {
+
+		Scanner scan = new Scanner(System.in);
+
+		do {
+			System.out.println("Use dashes in UUIDs? (y/n) ");
+			temp = scan.nextLine();
+		} while (!(temp.equalsIgnoreCase("y") || temp.equalsIgnoreCase("n")));
+
+		if (temp.equalsIgnoreCase("y")) {
+			withDashes = true;
+		} else if (temp.equalsIgnoreCase("n")) {
+			withDashes = false;
+		}
+
+		System.out.println("Database name: ");
+		mysql_Database = scan.nextLine();
+
+		System.out.println("Database IP: ");
+		mysql_IP = scan.nextLine();
+
+		System.out.println("Database username: ");
+		mysql_User = scan.nextLine();
+
+		System.out.println("Database password: ");
+		mysql_Password = scan.nextLine();
+
+		System.out.println("Database table: ");
+		mysql_Table = scan.nextLine();
+
+		System.out.println("Name column: (i.e. names) ");
+		mysql_Player_Column = scan.nextLine();
+
+		System.out.println("UUID column (i.e. uuids): ");
+		mysql_UUID_Column = scan.nextLine();
+
+		scan.close();
+
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			public void run() {
 				try {
@@ -100,6 +152,7 @@ public class ConvertUUIDs {
 				}
 			}
 		});
+
 		try {
 			PreparedStatement stmt = getConnection().prepareStatement(
 					"SELECT " + mysql_Player_Column + " FROM " + mysql_Table
@@ -121,6 +174,11 @@ public class ConvertUUIDs {
 			while (itel.hasNext()) {
 				String name = itel.next();
 				String uuid = getUUID(name);
+
+				if (withDashes) {
+					uuid = uuidWithDashes(uuid);
+				}
+
 				if (uuid == null) {
 					System.out.println("Cannot fetch UUID for player " + name
 							+ ". Skipping him!");

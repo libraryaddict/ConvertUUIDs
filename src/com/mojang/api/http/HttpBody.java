@@ -11,5 +11,4 @@ public class HttpBody {
 	public byte[] getBytes() {
 		return bodyString != null ? bodyString.getBytes() : new byte[0];
 	}
-
 }
